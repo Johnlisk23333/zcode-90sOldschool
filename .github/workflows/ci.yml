@@ -9,6 +9,11 @@ on:
 jobs:
   check:
     runs-on: windows-latest
+    # Windows runner 的控制台默认 cp1252，脚本里打印中文（如 cmd 文件名）会直接
+    # UnicodeEncodeError 退出；统一强制 UTF-8 输出。
+    env:
+      PYTHONIOENCODING: utf-8
+      PYTHONUTF8: '1'
     steps:
       - uses: actions/checkout@v4
 
@@ -26,10 +31,14 @@ jobs:
       - name: 补丁器编译检查
         run: python -m py_compile scripts/appearance_patcher.py scripts/appearance_autoheal.pyw
 
-      - name: 版本四处一致性
+      - name: 版本一致性（引擎/补丁器/plugin.json）
         shell: python
         run: |
           import json, re, pathlib, sys
+          try:
+              sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+          except Exception:
+              pass
           root = pathlib.Path('.')
           engine = (root / 'scripts/zcode-90sOldschool.js').read_text(encoding='utf-8')
           patcher = (root / 'scripts/appearance_patcher.py').read_text(encoding='utf-8')
@@ -39,7 +48,7 @@ jobs:
           v_plugin = plugin['version']
           print('engine', v_engine, '| patcher', v_patcher, '| plugin', v_plugin)
           if not (v_engine == v_patcher == v_plugin):
-              sys.exit('版本不一致：请同步 引擎 VERSION / ENGINE_VERSION / plugin.json')
+              sys.exit('version mismatch: sync VERSION / ENGINE_VERSION / plugin.json')
 
       - name: 冒烟测试
         run: node tests/run-all.cjs
@@ -48,15 +57,23 @@ jobs:
         shell: python
         run: |
           import pathlib, sys
+          try:
+              sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+          except Exception:
+              pass
+          files = sorted(pathlib.Path('.').glob('*.cmd'))
           bad = []
-          for f in pathlib.Path('.').glob('*.cmd'):
+          for f in files:
               b = f.read_bytes()
               if b'\r\n' not in b:
-                  bad.append(f'{f.name}: 缺少 CRLF')
+                  bad.append(f.name + ': missing CRLF')
               try:
                   b.decode('gbk')
               except UnicodeDecodeError:
-                  bad.append(f'{f.name}: 不是 GBK')
-          print('checked cmd files:', [f.name for f in pathlib.Path('.').glob('*.cmd')])
+                  bad.append(f.name + ': not GBK')
+          print('cmd files checked:', len(files))
+          for f in files:
+              print('  -', f.name)
           if bad:
-              print('\n'.join(bad)); sys.exit(1)
+              print('\n'.join(bad))
+              sys.exit(1)
