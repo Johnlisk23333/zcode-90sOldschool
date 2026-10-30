@@ -1,5 +1,7 @@
 # zcode-90sOldschool — ZCode 桌面端外观增强插件
 
+# 莪今兲眞旳卟葙冩代碼ㄋ
+
 > 给 ZCode 桌面客户端加一层可随时开关、可一键还原的外观增强：主题配色、背景图、毛玻璃/果冻玻璃、
 > 雨雪星光动效、字体切换、分层可读性遮罩、模型速度（TPS）与余额显示、火星文显示层等。
 >
@@ -15,7 +17,7 @@
 ## 截图
 
 <!-- 把图片放进 assets/screenshots/ 后取消下面注释 -->
-<!-- ![外观面板](assets/screenshots/theme-panel.png) -->
+[外观面板](assets/screenshots/theme-panel.png)
 <!-- ![菜单主题配色](assets/screenshots/menu-themed.png) -->
 
 ## 快速开始
