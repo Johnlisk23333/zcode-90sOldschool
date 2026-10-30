@@ -1,0 +1,24 @@
+# 本地/构建产物，不入库
+.mimosa/
+__pycache__/
+*.py[cod]
+*.log
+*.asar
+*.asar.zcode-ap-bak
+*.asar.zcode-ap.json
+*.asar.zcode-ap-autoheal.log
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+
+# 依赖与临时目录
+node_modules/
+out/
+dist/
+tmp/
+tests/.tmp/

@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 引擎语法检查
+        run: node --check scripts/zcode-90sOldschool.js
+
+      - name: 补丁器编译检查
+        run: python -m py_compile scripts/appearance_patcher.py scripts/appearance_autoheal.pyw
+
+      - name: 版本四处一致性
+        shell: python
+        run: |
+          import json, re, pathlib, sys
+          root = pathlib.Path('.')
+          engine = (root / 'scripts/zcode-90sOldschool.js').read_text(encoding='utf-8')
+          patcher = (root / 'scripts/appearance_patcher.py').read_text(encoding='utf-8')
+          plugin = json.loads((root / '.zcode-plugin/plugin.json').read_text(encoding='utf-8'))
+          v_engine = re.search(r"var VERSION = '([^']+)'", engine).group(1)
+          v_patcher = re.search(r"ENGINE_VERSION = '([^']+)'", patcher).group(1)
+          v_plugin = plugin['version']
+          print('engine', v_engine, '| patcher', v_patcher, '| plugin', v_plugin)
+          if not (v_engine == v_patcher == v_plugin):
+              sys.exit('版本不一致：请同步 引擎 VERSION / ENGINE_VERSION / plugin.json')
+
+      - name: 冒烟测试
+        run: node tests/run-all.cjs
+
+      - name: .cmd 编码与换行检查
+        shell: python
+        run: |
+          import pathlib, sys
+          bad = []
+          for f in pathlib.Path('.').glob('*.cmd'):
+              b = f.read_bytes()
+              if b'\r\n' not in b:
+                  bad.append(f'{f.name}: 缺少 CRLF')
+              try:
+                  b.decode('gbk')
+              except UnicodeDecodeError:
+                  bad.append(f'{f.name}: 不是 GBK')
+          print('checked cmd files:', [f.name for f in pathlib.Path('.').glob('*.cmd')])
+          if bad:
+              print('\n'.join(bad)); sys.exit(1)
